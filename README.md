@@ -69,10 +69,21 @@ Tyler depends on [OpenSlide](https://openslide.org/), which must be installed se
 Create a virtual environment, and install development dependencies.
 
 ```bash
+git clone https://github.com/kaczmarj/tyler
+cd tyler
 python -m venv venv
 source ./venv/bin/activate
-python -m pip install --no-cache-dir 'tyler[dev] @ https://github.com/kaczmarj/tyler/tarball/main'
+python -m pip install --no-cache-dir --editable .[dev]
 ```
+
+## Musings on data orientation
+
+- Openslide `slide.dimensions` orients data as `(cols, rows)`.
+- PIL orients data as `(cols, rows)`.
+- Scikit-image orients data as `(rows, cols, channels)`.
+- Matplotlib pyplot imshow expects data as `(rows, cols, [channels])`.
+
+where `[]` indicates optional axis.
 
 ---
 
