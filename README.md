@@ -2,6 +2,9 @@
 
 Python module to extract tiles from whole slide images.
 
+![GitHub Workflow Status](https://github.com/kaczmarj/tyler/actions/workflows/ci.yml/badge.svg)
+![Codecov](https://img.shields.io/codecov/c/github/kaczmarj/tyler)
+
 ## Example
 
 ```python
