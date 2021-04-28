@@ -53,6 +53,8 @@ Image metadata
 
 ## Installation
 
+This is a diff.
+
 Install with `pip`:
 
 ```bash
