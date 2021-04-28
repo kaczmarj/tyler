@@ -2,8 +2,10 @@
 
 from pathlib import Path
 import time
-from typing import Dict, NamedTuple, Tuple, Union
-import uuid
+from typing import Dict
+from typing import NamedTuple
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import openslide
@@ -13,7 +15,7 @@ from PIL.PngImagePlugin import PngInfo
 PathType = Union[Path, str]
 
 
-def get_num_tiles(
+def _get_num_tiles(
     slide_size: Tuple[int, int],
     tile_size: Tuple[int, int],
     strides: Tuple[int, int] = None,
@@ -48,10 +50,21 @@ def get_num_tiles(
     return num_tiles_w, num_tiles_h
 
 
-class TileMeta(NamedTuple):
+class Tile(NamedTuple):
     """Metadata for one tile.
 
-    Includes information like position and size.
+    Parameters
+    ----------
+    oslide : openslide.OpenSlide
+        The whole slide image with which this tile is associated.
+    wsi_id : str
+        A unique ID for the whole slide image.
+    c, r : int
+        Column and row of the top-left corner of the tile.
+    cols, rows : int
+        The number of columns and rows in the tile.
+    level : int
+        The level in the whole slide image from which the tile is taken.
     """
 
     oslide: openslide.OpenSlide
@@ -75,18 +88,29 @@ class TileMeta(NamedTuple):
         )
         return img
 
+    def to_png(self, path: PathType) -> Path:
+        """Save a tile to disk as a PNG image with associated metadata."""
+        # Save metadata directly into the PNG file.
+        info = PngInfo()
+        for k, v in self.info.items():
+            info.add_text(k, v)
+        info.add_text("timestamp", str(int(time.time())))
+        img = self.to_pil_image()
+        path = Path(path).with_suffix(".png")
+        img.save(path, pnginfo=info)
+        return path
 
-def get_tilemetas(
+
+def get_tiles(
     oslide: openslide.OpenSlide,
     wsi_id: str,
     level: int,
     tile_size: Tuple[int, int],
     strides: Tuple[int, int] = None,
-    tile_path: PathType = Path("tiles"),
 ) -> np.ndarray:
-    """Return 2D array of TileMeta instances.
+    """Return 2D array of Tile instances.
 
-    These TileMeta instances include metadata
+    These Tile instances include metadata
     (e.g., position, size) for each tile in the whole slide image.
 
     Parameters
@@ -106,12 +130,12 @@ def get_tilemetas(
     Returns
     -------
     np.ndarray
-        Two-dimensional array of TileMeta instances. The TileMeta
+        Two-dimensional array of Tile instances. The Tile
         instance of position col,row in the array corresponds to its
         position on the whole slide image.
     """
 
-    num_tiles_w, num_tiles_h = get_num_tiles(
+    num_tiles_w, num_tiles_h = _get_num_tiles(
         slide_size=oslide.dimensions, tile_size=tile_size, strides=strides
     )
     # Get position for each tile (top-left).
@@ -129,7 +153,7 @@ def get_tilemetas(
     result = np.empty((num_tiles_w, num_tiles_h), dtype=object)
     for i, col in zip(range(num_tiles_w), cs):
         for j, row in zip(range(num_tiles_h), rs):
-            result[i, j] = TileMeta(
+            result[i, j] = Tile(
                 oslide=oslide,
                 wsi_id=wsi_id,
                 c=col,
@@ -142,18 +166,3 @@ def get_tilemetas(
         raise ValueError("Array not filled. This should have never happened...")
 
     return result
-
-
-def save_one(directory: PathType, tilemeta: TileMeta) -> Path:
-    """Save one tile to disk as a PNG image with associated metadata."""
-    directory = Path(directory)
-    # Save metadata directly into the PNG file.
-    info = PngInfo()
-    for k, v in tilemeta.info.items():
-        info.add_text(k, v)
-    info.add_text("timestamp", str(int(time.time())))
-    img = tilemeta.to_pil_image()
-    name = f"{uuid.uuid4()}.png"
-    path = directory / name
-    img.save(path, pnginfo=info)
-    return path
