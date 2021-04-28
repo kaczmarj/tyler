@@ -23,7 +23,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install tyler
-        run: python -m pip install --no-cache-dir --editable .[dev]
+        run: |
+          python -m pip install --no-cache-dir -U pip setuptools wheel
+          python -m pip install --no-cache-dir --editable .[dev]
       - name: Check types
         run: mypy -m tyler
       - name: Check style
