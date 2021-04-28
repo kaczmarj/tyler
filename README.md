@@ -56,10 +56,20 @@ Image metadata
 Install with `pip`:
 
 ```bash
-python -m pip install --no-cache-dir https://github.com/kaczmarj/tyler/tarball/master
+python -m pip install --no-cache-dir https://github.com/kaczmarj/tyler/tarball/main
 ```
 
 Tyler depends on [OpenSlide](https://openslide.org/), which must be installed separately. See [OpenSlide's download page](https://openslide.org/download/) for more information.
+
+### Developer installation
+
+Create a virtual environment, and install development dependencies.
+
+```bash
+python -m venv venv
+source ./venv/bin/activate
+python -m pip install --no-cache-dir 'tyler[dev] @ https://github.com/kaczmarj/tyler/tarball/main'
+```
 
 ---
 
