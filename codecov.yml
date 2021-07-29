@@ -1,3 +1,7 @@
 coverage:
   status:
     patch: false
+    project:
+      default:
+        target: auto
+        threshold: 2%  # let coverage drop by this percentage
