@@ -25,7 +25,8 @@ def _get_num_tiles(
 ) -> Tuple[int, int]:
     """Get number of tiles that can be taken from a whole slide.
 
-    Does not include partial tiles (i.e., at edges).
+    Does not include partial tiles (i.e., at edges). This also does not consider any
+    mask.
 
     Parameters
     ----------
@@ -81,15 +82,20 @@ class Tile(NamedTuple):
     @property
     def info(self) -> Dict[str, str]:
         d = self._asdict()
-        return {str(k): str(v) for k, v in d.items()}
+        d = {str(k): str(v) for k, v in d.items()}
+        d["mppx"] = str(self.mpp[0])
+        d["mppy"] = str(self.mpp[1])
+        return d
 
     @property
     def mpp(self) -> Tuple[float, float]:
-        mppx = float(self.oslide.properties[openslide.PROPERTY_NAME_MPP_X])
-        mppy = float(self.oslide.properties[openslide.PROPERTY_NAME_MPP_Y])
+        """Microns per pixel in the x, y dimensions, respectively."""
+        mppx = float(self.oslide.properties.get(openslide.PROPERTY_NAME_MPP_X, -1))
+        mppy = float(self.oslide.properties.get(openslide.PROPERTY_NAME_MPP_Y, -1))
         return mppx, mppy
 
     def to_pil_image(self) -> PIL.Image.Image:
+        """Return a region of the whole slide image as a Pillow image object."""
         img = self.oslide.read_region(
             location=(self.c, self.r),
             level=self.level,
@@ -98,7 +104,17 @@ class Tile(NamedTuple):
         return img
 
     def to_png(self, path: PathType) -> Path:
-        """Save a tile to disk as a PNG image with associated metadata."""
+        """Save a tile to disk as a PNG image with associated metadata.
+
+        Parameters
+        ----------
+        path : Pathlike
+            Path to save the PNG file.
+
+        Returns
+        -------
+        pathlib.Path
+        """
         # Save metadata directly into the PNG file.
         info = PngInfo()
         for k, v in self.info.items():
@@ -110,9 +126,29 @@ class Tile(NamedTuple):
         return path
 
     def is_in_mask(self, mask: np.ndarray) -> bool:
+        """Return whether this tile is contained inside a boolean mask.
+
+        Parameters
+        ----------
+        mask : array-like
+            Boolean mask. The shape must be proportional to the shape of the whole
+            slide image.
+
+        Returns
+        -------
+        bool
+        """
         # openslide shape is (cols, rows), and numpy is (rows, cols).
         mask = np.asarray(mask)
         down_sample_ratio: float = self.oslide.dimensions[0] / mask.shape[1]
+        # check that the down_sample ratio is the same in both dimensions
+        down_sample_ratio_rows: float = self.oslide.dimensions[1] / mask.shape[0]
+        if down_sample_ratio != down_sample_ratio_rows:
+            err = (
+                f"Shape of mask {mask.shape[::-1]} is not proportional to shape of"
+                f" whole slide image {self.oslide.dimensions}."
+            )
+            raise ValueError(err)
         smallc = round(self.c / down_sample_ratio)
         smallr = round(self.r / down_sample_ratio)
         smallcols = round(self.cols / down_sample_ratio)
@@ -234,7 +270,7 @@ def main(args=None):
     output_dir = ns.output / ns.input.name
 
     if output_dir.exists() and not ns.force:
-        print("Output directory exists. To overwrite, re-run with --force.")
+        print("Output directory exists. To potentially overwrite, re-run with --force.")
         return
 
     oslide = openslide.OpenSlide(str(ns.input))
