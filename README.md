@@ -5,7 +5,18 @@ Python module to extract tiles from whole slide images.
 ![GitHub Workflow Status](https://github.com/kaczmarj/tyler/actions/workflows/ci.yml/badge.svg)
 ![Codecov](https://img.shields.io/codecov/c/github/kaczmarj/tyler)
 
-## Example
+# Examples
+
+## Command-line
+
+```bash
+python -m tyler \
+    -o test-tiles \
+    --tile-size 1000 1000 \
+    wsi.svs mask.png
+```
+
+## In a Python script
 
 ```python
 import openslide
@@ -54,7 +65,7 @@ Image metadata
   timestamp: 1619631433
 ```
 
-## Installation
+# Installation
 
 Install with `pip`:
 
@@ -64,7 +75,7 @@ python -m pip install --no-cache-dir https://github.com/kaczmarj/tyler/tarball/m
 
 Tyler depends on [OpenSlide](https://openslide.org/), which must be installed separately. See [OpenSlide's download page](https://openslide.org/download/) for more information.
 
-### Developer installation
+## Developer installation
 
 Create a virtual environment, and install development dependencies.
 
@@ -76,7 +87,7 @@ source ./venv/bin/activate
 python -m pip install --no-cache-dir --editable .[dev]
 ```
 
-## Musings on data orientation
+# Musings on data orientation
 
 - Openslide `slide.dimensions` orients data as `(cols, rows)`.
 - PIL orients data as `(cols, rows)`.
