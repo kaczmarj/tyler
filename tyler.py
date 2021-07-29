@@ -143,7 +143,8 @@ class Tile(NamedTuple):
         down_sample_ratio: float = self.oslide.dimensions[0] / mask.shape[1]
         # check that the down_sample ratio is the same in both dimensions
         down_sample_ratio_rows: float = self.oslide.dimensions[1] / mask.shape[0]
-        if down_sample_ratio != down_sample_ratio_rows:
+        # sometimes the down sample ratios are very close but not exactly equal.
+        if round(down_sample_ratio, 2) != round(down_sample_ratio_rows, 2):
             err = (
                 f"Shape of mask {mask.shape[::-1]} is not proportional to shape of"
                 f" whole slide image {self.oslide.dimensions}."
